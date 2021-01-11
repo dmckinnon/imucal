@@ -1,4 +1,7 @@
 #include <iostream>
+#include <fstream>
+#include "Config.h"
+
 
 using namespace std;
 
@@ -6,6 +9,9 @@ using namespace std;
 	This program is designed to find the calibration parameters - the bias and gain - 
 	for an IMU. I've written and debugged it using an MPU6050, but theoretically it
 	will work for any IMU. 
+	The algorithm and theory I'm working from comes from "A Robust and Easy to Implement Method
+	for IMU Calibration without External Equipment" by Tedaldi, Pretto, Menegatti, '13: 
+	https://www.researchgate.net/publication/273383944_A_robust_and_easy_to_implement_method_for_IMU_calibration_without_external_equipments
 
 	Note that for now all of the following is theoretical as I haven't yet implemented everything.
 	I find it helpful to write this as a series of goals, so this is what I intend to achieve. 
@@ -33,6 +39,40 @@ int main(int argc, char* argv[])
 {
 	// Preamble, and user options:
 	cout << "user options" << endl;
+
+	IMU imu;
+
+	Config config;
+	if (!config.ParseArgs(argc, argv))
+	{
+
+	}
+
+	if (config.logIMUData)
+	{
+		cout << "Logging data. This will guide you through the data capture procedure. " << endl;
+	}
+
+	if (config.calibrate)
+	{
+		cout << "Calibrating IMU data. If data was just logged, that will be calibrated." << endl
+			<< "Otherwise, the provided input file will be calibrated. If no source exists, program will exit." << endl;
+
+		std::ifstream inputFile(config.inputFile);
+		if (imu.HasData())
+		{
+			cout << "Using existing log data." << endl;
+		}
+		else if (inputFile.is_open())
+		{
+			cout << "Attempting to read from file." << endl;
+		}
+		else
+		{
+			cout << "No source provided. Exiting." << endl;
+			return -1;
+		}
+	}
 
 	// await user input
 
