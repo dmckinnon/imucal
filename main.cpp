@@ -1,6 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include "Config.h"
+#include "IMU.h"
 
 
 using namespace std;
@@ -37,9 +38,6 @@ using namespace std;
 */
 int main(int argc, char* argv[])
 {
-	// Preamble, and user options:
-	cout << "user options" << endl;
-
 	IMU imu;
 
 	Config config;
@@ -82,7 +80,34 @@ int main(int argc, char* argv[])
 	// 'c' is calibrate 
 	// 'i' is input file to be calibrated
 	// if no input file is provided, then assume that they are calibrating the data about to be logged
+	if (config.logIMUData)
+	{
+		//imu.log
 
+		if (!config.outputFile.empty())
+		{
+			// Write the IMU log out to the specified file
+			imu.WriteLogToFile(config.outputFile);
+		}
+	}
+
+	if (config.calibrate)
+	{
+		if (!config.inputFile.empty())
+		{
+			imu.ReadLogFromFile(config.inputFile);
+		}
+
+		// Calibrate
+		if (!imu.HasData())
+		{
+			cout << "No IMU data has been provided - cannot calibrate." << endl;
+			return -1;
+		}
+
+		// Write calibration to file
+		imu.WriteCalibrationToFile("imucal.txt");
+	}
 
 	return 0;
 }

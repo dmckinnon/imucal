@@ -26,6 +26,8 @@ public:
 	bool Calibrate();
 	bool WriteCalibrationToFile(std::string filename);
 
+	void WriteLogToFile(std::string filename);
+	void ReadLogFromFile(std::string filename);
 
 
 private:

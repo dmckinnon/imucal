@@ -15,8 +15,6 @@ public:
 		inputFile = "";
 	}
 
-	~Config();
-
 	bool ParseArgs(int argc, char* argv[]);
 
 	bool logIMUData;
