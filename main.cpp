@@ -83,6 +83,7 @@ int main(int argc, char* argv[])
 	if (config.logIMUData)
 	{
 		//imu.log
+		// This requires the serial stuff
 
 		if (!config.outputFile.empty())
 		{

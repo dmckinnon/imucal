@@ -1,8 +1,7 @@
 #pragma once
+#include <Eigen/Dense>
 #include <string>
 #include <vector>
-
-#include "Vector.h"
 
 /*
 	Class to represent an IMU for IMU calibration.
@@ -34,8 +33,8 @@ private:
 
 	struct IMUSample
 	{
-		Vector<3> accel;
-		Vector<3> gyro;
+		Eigen::Vector3f accel;
+		Eigen::Vector3f gyro;
 		
 		uint64_t timestamp;
 	};
@@ -46,6 +45,6 @@ private:
 	double rot_yz;
 	double rot_zy;
 	double rot_zx;
-	Vector<3> scale;
-	Vector<3> bias;
+	Eigen::Vector3f scale;
+	Eigen::Vector3f bias;
 };
