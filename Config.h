@@ -11,6 +11,7 @@ public:
 	{
 		initTime = 60;
 		captureFrequency = 100;
+		computeInitVariance = false;
 		logIMUData = false;
 		calibrate = false;
 		outputFile = "";
@@ -20,9 +21,10 @@ public:
 	bool ParseArgs(int argc, char* argv[]);
 
 	int initTime;
-	float captureFrequency;
+	int captureFrequency;
 	bool logIMUData;
 	bool calibrate;
+	bool computeInitVariance;
 	std::string inputFile;
 	std::string outputFile;
 };

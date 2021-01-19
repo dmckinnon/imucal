@@ -4,6 +4,10 @@
 #include <vector>
 #include "IMU.h"
 
+// Tunable parameters
+#define ALLAN_AVERAGE_INTERVAL_SECONDS 1
+#define STATIC_THRESHOLD_MULTIPLIER 6
+
 IMU::IMU() :
 	rot_yz(0),
 	rot_zy(0),
@@ -28,11 +32,58 @@ bool IMU::HasData()
 	return false;
 }
 
-bool IMU::Calibrate(const int initTime, const float freq)
+/*
+*	Compute the Allan Variance for a data stream and write this out to a file.
+* 
+* 
+* 
+*/
+void ComputeAndWriteDataForInitialisationPeriod(std::string filename)
 {
+
+}
+
+/*
+*	Calibrate the IMU
+* 
+*/
+bool IMU::Calibrate(const int initTime, const int freq)
+{
+	// sanity checks
+	if (samples.size() < freq * initTime)
+	{
+		return false;
+	}
+
 	// Go over initTime samples and compute the Allan variance
 	// This gives a threshold for stationary moments, used below.
 	// We also use this initial period to compute the gyro biases.
+	// The sample time for averages in this computation is defined
+	// as ALLAN_AVERAGE_INTERVAL_SECONDS in CalibrationHelpers.h
+	Eigen::Vector3f allanVariance;
+	// TODO specify which device? Do for accel
+	ComputeAllanVariance(initTime, freq, allanVariance);
+	float staticThreshold = STATIC_THRESHOLD_MULTIPLIER * allanVariance.norm() * allanVariance.norm();
+
+
+	// Why is allan varaince for gyro computed?
+	// don't we need this for accel? TO compare to accel?
+
+	// Use Allan variance  + graph this to find a good T_init
+	// make a function that does this
+
+
+
+	// average over each axis in this time to compute the biases
+	int numInitSamples = freq * initTime;
+	for (int i = 0; i < numInitSamples; ++i)
+	{
+		// TODO: watch for numerical growth here, this could get large?
+		// ort lose precision
+		bias += samples[i].gyro;
+	}
+	bias /= numInitSamples;
+
 
 
 	// Find the timestamps of all the stationary points.
@@ -113,4 +164,52 @@ void IMU::ReadLogFromFile(std::string filename)
 			// Debug point to confirm this all happened correctly
 		}
 	}
+}
+
+/*
+*	Compute the Allan variance for a sequence, given the samples
+*	and the interval for averaging.
+*   https://en.wikipedia.org/wiki/Allan_variance#Allan_variance
+*   https://ui.adsabs.harvard.edu/abs/2006MeScT..17.2980S/abstract
+*/
+void IMU::ComputeAllanVariance(
+	const int initTime,
+	const int freq,
+	Eigen::Vector3f& allanVariance)
+{
+	allanVariance.setZero();
+	int numIntervals = initTime / ALLAN_AVERAGE_INTERVAL_SECONDS;
+	int numSamplesInInterval = freq * ALLAN_AVERAGE_INTERVAL_SECONDS;
+	Eigen::Vector3f priorAvg, currentAvg;
+	currentAvg.setZero();
+	priorAvg.setZero();
+	int index = 0;
+
+	// compute first prior average
+	for (; index < numSamplesInInterval; ++index)
+	{
+		priorAvg += samples[index].gyro;
+	}
+	priorAvg /= numSamplesInInterval;
+
+	for (int i = 1; i < numIntervals; ++i)
+	{
+		// Compute current prior average
+		currentAvg.setZero();
+		for (; index < i*numSamplesInInterval; ++index)
+		{
+			currentAvg += samples[index].gyro;
+		}
+		currentAvg /= numSamplesInInterval;
+
+		Eigen::Vector3f diff = currentAvg - priorAvg;
+		Eigen::Vector3f sq;
+		sq << diff(0) * diff(0), diff(1)* diff(1), diff(2)* diff(2);
+
+		allanVariance += sq;
+
+		priorAvg = currentAvg;
+	}
+
+	allanVariance /= 2 * numIntervals;
 }

@@ -22,7 +22,9 @@ public:
 	// use a class that has IO?
 	bool HasData();
 
-	bool Calibrate(const int initTime, const float freq);
+	void ComputeAndWriteDataForInitialisationPeriod(std::string filename);
+
+	bool Calibrate(const int initTime, const int freq);
 	bool WriteCalibrationToFile(std::string filename);
 
 	void WriteLogToFile(std::string filename);
@@ -40,6 +42,9 @@ private:
 	};
 
 	std::vector<IMUSample> samples;
+
+	// Helpers
+	void ComputeAllanVariance(const int initTime, const int freq, Eigen::Vector3f& allanVariance);
 
 	// parameters to estimate
 	double rot_yz;

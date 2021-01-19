@@ -53,7 +53,7 @@ bool Config::ParseArgs(int argc, char* argv[])
 		{
 			if (i + 1 < argc)
 			{
-				captureFrequency = strtof(argv[++i], nullptr);
+				captureFrequency = strtol(argv[++i], nullptr, 10);
 			}
 			else
 			{
