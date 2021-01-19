@@ -106,6 +106,8 @@ int main(int argc, char* argv[])
 			return -1;
 		}
 
+		imu.Calibrate(config.initTime, config.captureFrequency);
+
 		// Write calibration to file
 		imu.WriteCalibrationToFile("imucal.txt");
 	}

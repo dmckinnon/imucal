@@ -9,6 +9,8 @@ class Config
 public:
 	Config()
 	{
+		initTime = 60;
+		captureFrequency = 100;
 		logIMUData = false;
 		calibrate = false;
 		outputFile = "";
@@ -17,6 +19,8 @@ public:
 
 	bool ParseArgs(int argc, char* argv[]);
 
+	int initTime;
+	float captureFrequency;
 	bool logIMUData;
 	bool calibrate;
 	std::string inputFile;

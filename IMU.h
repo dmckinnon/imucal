@@ -22,7 +22,7 @@ public:
 	// use a class that has IO?
 	bool HasData();
 
-	bool Calibrate();
+	bool Calibrate(const int initTime, const float freq);
 	bool WriteCalibrationToFile(std::string filename);
 
 	void WriteLogToFile(std::string filename);

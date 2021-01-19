@@ -1,4 +1,5 @@
 #include <iostream>
+#include <stdlib.h>
 #include "Config.h"
 
 using namespace std;
@@ -36,6 +37,28 @@ bool Config::ParseArgs(int argc, char* argv[])
 		else if (argv[i] == "-c")
 		{
 			calibrate = true;
+		}
+		else if (argv[i] == "-init")
+		{
+			if (i + 1 < argc)
+			{
+				initTime = strtol(argv[++i], nullptr, 10);
+			}
+			else
+			{
+				std::cout << "No init time specified!" << std::endl;
+			}
+		}
+		else if (argv[i] == "-f")
+		{
+			if (i + 1 < argc)
+			{
+				captureFrequency = strtof(argv[++i], nullptr);
+			}
+			else
+			{
+				std::cout << "No frequency specified!" << std::endl;
+			}
 		}
 		else
 		{

@@ -12,8 +12,8 @@ IMU::IMU() :
 	std::vector<double> scaleInit(3, 1.0);
 	std::vector<double> biasInit(3, 0.0);
 
-	scale = Vector<3>(scaleInit);
-	bias = Vector<3>(biasInit);
+	scale.setZero();
+	bias.setZero();
 }
 
 bool IMU::HasData()
@@ -28,9 +28,19 @@ bool IMU::HasData()
 	return false;
 }
 
-bool IMU::Calibrate()
+bool IMU::Calibrate(const int initTime, const float freq)
 {
-	// fill out
+	// Go over initTime samples and compute the Allan variance
+	// This gives a threshold for stationary moments, used below.
+	// We also use this initial period to compute the gyro biases.
+
+
+	// Find the timestamps of all the stationary points.
+	// Do we auto-detect how long they are? I like that ...
+
+	// Sliding window of 1 second of samples to compute variance across that window. 
+	// When variance is below the 'stationary' threshold, set time at start of window to be 'start of stationary'
+	// and as soon things are above threshold, the time at the end of the prior window is the end of stationary
 
 	return true;
 }
@@ -66,6 +76,41 @@ void IMU::WriteLogToFile(std::string filename)
 			logFile << samples[i].timestamp << ","
 				    << samples[i].accel(0) << "," << samples[i].accel(1) << "," << samples[i].accel(2) << "," 
 				    << samples[i].gyro(0) << "," << samples[i].gyro(1) << "," << samples[i].gyro(2) << std::endl;
+		}
+	}
+}
+
+void IMU::ReadLogFromFile(std::string filename)
+{
+	std::ifstream logFile(filename.c_str());
+	if (logFile.is_open())
+	{
+		std::string line;
+		bool firstLine = true;
+		while (std::getline(logFile, line))
+		{
+			if (firstLine)
+			{
+				firstLine = false;
+				continue;
+			}
+
+			if (line.size() < 1)
+			{
+				continue;
+			}
+			
+			char* values;
+			IMUSample sample;
+			sample.timestamp = strtoull(line.c_str(), &values, 10);
+			sample.accel(0) = strtof(values, &values);
+			sample.accel(1) = strtof(values, &values);
+			sample.accel(2) = strtof(values, &values);
+			sample.gyro(0) = strtof(values, &values);
+			sample.gyro(1) = strtof(values, &values);
+			sample.gyro(2) = strtof(values, &values);
+
+			// Debug point to confirm this all happened correctly
 		}
 	}
 }
