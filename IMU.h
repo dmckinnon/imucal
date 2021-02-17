@@ -24,7 +24,11 @@ public:
 
 	void ComputeAndWriteDataForInitialisationPeriod(std::string filename);
 
-	bool Calibrate(const int initTime, const int freq, const float staticIntervalTime);
+	bool Calibrate(
+		const int initTime,
+		const int freq,
+		const float staticIntervalTime,
+		const float transitionTime);
 	bool WriteCalibrationToFile(std::string filename);
 
 	void WriteLogToFile(std::string filename);
@@ -53,6 +57,8 @@ private:
 
 	void ComputeStaticIntervals(
 		const float threshold,
+		const float staticTime,
+		const float transitionTime,
 		std::vector<std::pair<int, int>>& staticIntervals);
 
 	// parameters to estimate

@@ -94,7 +94,11 @@ void IMU::ComputeAndWriteDataForInitialisationPeriod(std::string filename)
 *	Calibrate the IMU
 * 
 */
-bool IMU::Calibrate(const int initTime, const int freq, const float staticIntervalTime)
+bool IMU::Calibrate(
+	const int initTime,
+	const int freq,
+	const float staticIntervalTime,
+	const float transitionTime)
 {
 	// sanity checks
 	if (samples.size() < freq * initTime)
@@ -126,7 +130,7 @@ bool IMU::Calibrate(const int initTime, const int freq, const float staticInterv
 	// the variance of the accel data is below the staticThresholdAccel computed above.
 	// At least 9 static intervals are required for a minimal calibration
 	std::vector<std::pair<int, int>> staticIntervals;
-	ComputeStaticIntervals(staticThresholdAccel, staticIntervals);
+	ComputeStaticIntervals(staticThresholdAccel, staticIntervalTime, transitionTime, staticIntervals);
 	std::cout << "Found " << staticIntervals.size() << " static intervals of length " << staticIntervalTime << " in the data" << std::endl;
 	if (staticIntervals.size() < 9)
 	{
@@ -152,10 +156,6 @@ bool IMU::Calibrate(const int initTime, const int freq, const float staticInterv
 		bias /= (float)(i + 1);
 	}
 
-
-
-	// Find the timestamps of all the stationary points.
-	// Do we auto-detect how long they are? I like that ...
 
 	// Sliding window of 1 second of samples to compute variance across that window. 
 	// When variance is below the 'stationary' threshold, set time at start of window to be 'start of stationary'
@@ -339,7 +339,13 @@ void IMU::ComputeAllanVariance(
  * Two consective intervals must have at least half the transition time provided in the config between them.
  * Intervals are denoted by start and end indices for the data array
  */
-void IMU::ComputeStaticIntervals(const float threshold, std::vector<std::pair<int, int>>& staticIntervals)
+void IMU::ComputeStaticIntervals(
+	const float threshold,
+	const float staticTime,
+	const float transitionTime,
+	std::vector<std::pair<int, int>>& staticIntervals)
 {
-
+	// For each section of certain length, find the variance
+	// if below, flag it, and move straight to the end fo the section
+	// otherwise, start a new section with the next sample
 }

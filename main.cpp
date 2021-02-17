@@ -104,7 +104,11 @@ int main(int argc, char* argv[])
 			return -1;
 		}
 
-		if (!imu.Calibrate(config.initTime, config.captureFrequency, config.staticTime))
+		if (!imu.Calibrate(
+			        config.initTime,
+					config.captureFrequency,
+					config.staticTime,
+					config.transferTime))
 		{
 			std::cout << "Failed to calibrate" << std::endl;
 			exit(-1);
