@@ -4,9 +4,10 @@ This article and repo describes how to calibrate an Inertial Measurement Unit (I
 ## Contents
 - Overview
 - Calibration Process
-- Detecting stationary moments
+- Background theory
 - Finding device variance
-- Calibrating Acceleration
+- Detecting stationary moments
+- Calibrating Accelerometer
 - Calibrating Gyroscope
 
 
@@ -24,18 +25,36 @@ Well, ideally, we wouldn't need to, but manufacturing error and just tiny imperf
 
 **Bias** is additive error. If you have a tape measure with a bias, it adds a tiny bit onto every measurement, like the 1 mark being 0.01 units off, and everything else is correct from there. So every measurement is 0.01 units off, and if you _subtracted_ this from every measurement, you'd be correct. 
 
-**Scale** is multiplicative error. If you have a tape measurement with scale error, it would _multiple_ the measurement by some amount, like they wrote the labels but then stretched the tape so 1 is _actually_ at 1.01, and 2 is _actually_ at 2.02 and so on. If you scaled every measurement _down_ by 1.01, then you would be correct. 
+**Scale** is multiplicative error. If you have a tape measurement with scale error, it would _multiply_ the measurement by some amount, like someone wrote the labels on the tape but then stretched the tape so 1 is _actually_ at 1.01, and 2 is _actually_ at 2.02 and so on. If you scaled every measurement _down_ by 1.01, then you would be correct. 
 
 So instead of the accelerometer's measurement just being **a** = (**a_x**,**a_y**,**a_z**), we model this as 
 
-**a_corrected** = (**s_x** x **a_x_raw** + **b_x**, etc)
+**a_corrected** = (**s_x** * **a_x_raw** + **b_x**, etc)
 
 Otherwise every measurement will be off. So that's why we need to calibrate, and that's what calibration means: **calibrating an IMU means figuring out the scale and bias and using those for future measurements**.
 
-One final note before we get into precisely how this will happen: IMUs often are calibrated in the factories where they are made, if you pay enough for them. I'm using a MPU6050 from [Adafruit](https://www.adafruit.com/product/3886) which is nice and affordable, but I don't think it came calibrated. This is annoying because then I have no factory calibration to compare my process to. 
+One final note before we get into precisely how this will happen: IMUs often are calibrated in the factories where they are made, if you pay enough for them. I'm using a MPU6050 from [Adafruit](https://www.adafruit.com/product/3886) which is nice and affordable, but I don't think it came calibrated. This is annoying because then I have no factory calibration to compare my process to. I could spend more money and get a calibrated one ... but then there's also the question of whether I can use it uncalibrated, and whether I can get their calibration to compare mine to. Another option is to simulate. 
 
 ## Calibration Process
-I'm using the paper [A robust and easy to implement method for IMU calibration without external equipments](https://www.researchgate.net/publication/273383944_A_robust_and_easy_to_implement_method_for_IMU_calibration_without_external_equipments) and think of this as a replication experiment: I'm going to implement what I believe is their method based on their paper and see how well it works.
+I'm using the paper [A robust and easy to implement method for IMU calibration without external equipments](https://www.researchgate.net/publication/273383944_A_robust_and_easy_to_implement_method_for_IMU_calibration_without_external_equipments) by Tedaldi, Pretto and Menegatti, and think of this as a replication experiment: I'm going to implement what I believe is their method based on their paper and see how well it works.
 
+Physically, the authors' method involves:
+1. holding the IMU perfectly still for some amount of time an an **initialisation period**
+2. rotating it to a different position
+3. Holding it still for some smaller period of time, a **static measurement period**
+4. repeating 2 and 3 until we have enough data
+5. running the calibration algorithm on these collected data
 
+The initialisation period allows us to find the inherent noise or inherent error of the device, to take this into account later when trying to detect when the IMU is static (yes, we can tell it "I held it still here" but human precision will only get so far. If the IMU records at 1000Hz, then a human defining the static moment may be less accurate than the algorithm). Each statuc measurement period, and therefore each different position, constitutes a different sampling of the acceleration data for us to use in the final parameter estimation. Each transition between different positions constitutes a sampling of the gyroscope data, for its parameters. Since acceleromter parameters are easier to estimate than gyroscope parameters, we do these first, and then with these we can go and estimate the gyro data. 
 
+I'm going to go over the importance and use of the static periods and the transition periods, and how we estimate the parameters, but first lets go over the theory behind all of this so we know why we have arrived at this algorithm. 
+
+## Background theory
+
+## Finding Device Variance
+
+## Detecting Stationary Moments
+
+## Calibrating Accelerometer
+
+## Calibrating Gyroscope
