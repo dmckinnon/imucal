@@ -116,6 +116,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>C:\Users\damckinn\source\eigen\Eigen\src;C:\Users\damckinn\source\eigen;C:\Users\damckinn\source\eigen\Eigen\src\Jacobi;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -144,6 +145,7 @@
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="CalibrationHelpers.h" />
     <ClInclude Include="Config.h" />
     <ClInclude Include="IMU.h" />
     <ClInclude Include="Vector.h" />

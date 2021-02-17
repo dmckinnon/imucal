@@ -28,7 +28,7 @@ public:
 	bool WriteCalibrationToFile(std::string filename);
 
 	void WriteLogToFile(std::string filename);
-	void ReadLogFromFile(std::string filename);
+	bool ReadLogFromFile(std::string filename);
 
 
 private:
@@ -38,13 +38,19 @@ private:
 		Eigen::Vector3f accel;
 		Eigen::Vector3f gyro;
 		
+		// timestamp is in milliseconds
 		uint64_t timestamp;
 	};
 
 	std::vector<IMUSample> samples;
 
 	// Helpers
-	void ComputeAllanVariance(const int initTime, const int freq, Eigen::Vector3f& allanVariance);
+	void ComputeAllanVariance(
+		const int numIntervals,
+		const int numSamplesInInterval,
+		std::vector<IMUSample>& inputSamples,
+		Eigen::Vector3f& allanVarianceAccel,
+		Eigen::Vector3f& allanVarianceGyro);
 
 	// parameters to estimate
 	double rot_yz;

@@ -43,12 +43,41 @@ int main(int argc, char* argv[])
 	Config config;
 	if (!config.ParseArgs(argc, argv))
 	{
-
+		exit(-1);
 	}
 
+	// 'l' is log imu data
+	// 'o' specifies the output file for the log
+	// 'c' is calibrate 
+	// 'i' is input file to be calibrated
+	// if no input file is provided, then assume that they are calibrating the data about to be logged
 	if (config.logIMUData)
 	{
 		cout << "Logging data. This will guide you through the data capture procedure. " << endl;
+		//imu.log
+		// This requires the serial stuff
+		// Have configurable static times, and display those times and when to switch
+
+		if (!config.outputFile.empty())
+		{
+			// Write the IMU log out to the specified file
+			imu.WriteLogToFile(config.outputFile);
+		}
+	}
+
+	if (config.computeInitVariance)
+	{
+		// If we don't already have log data, use input file
+		if (!imu.HasData())
+		{
+			if (imu.ReadLogFromFile(config.inputFile))
+			{
+				std::cout << "Could not get data from input file " << config.inputFile << std::endl;
+			}
+		}
+
+		cout << "Computing Allan Variances from data and saving to " << config.varianceFile << endl;
+		imu.ComputeAndWriteDataForInitialisationPeriod(config.varianceFile);
 	}
 
 	if (config.calibrate)
@@ -64,45 +93,14 @@ int main(int argc, char* argv[])
 		else if (inputFile.is_open())
 		{
 			cout << "Attempting to read from file." << endl;
+			if (imu.ReadLogFromFile(config.inputFile))
+			{
+				std::cout << "Could not get data from input file " << config.inputFile << std::endl;
+			}
 		}
 		else
 		{
 			cout << "No source provided. Exiting." << endl;
-			return -1;
-		}
-	}
-
-	// await user input
-
-
-	// 'l' is log imu data
-	// 'o' specifies the output file for the log
-	// 'c' is calibrate 
-	// 'i' is input file to be calibrated
-	// if no input file is provided, then assume that they are calibrating the data about to be logged
-	if (config.logIMUData)
-	{
-		//imu.log
-		// This requires the serial stuff
-
-		if (!config.outputFile.empty())
-		{
-			// Write the IMU log out to the specified file
-			imu.WriteLogToFile(config.outputFile);
-		}
-	}
-
-	if (config.calibrate)
-	{
-		if (!config.inputFile.empty())
-		{
-			imu.ReadLogFromFile(config.inputFile);
-		}
-
-		// Calibrate
-		if (!imu.HasData())
-		{
-			cout << "No IMU data has been provided - cannot calibrate." << endl;
 			return -1;
 		}
 
@@ -111,6 +109,7 @@ int main(int argc, char* argv[])
 		// Write calibration to file
 		imu.WriteCalibrationToFile("imucal.txt");
 	}
+
 
 	return 0;
 }
