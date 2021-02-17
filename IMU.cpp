@@ -64,7 +64,7 @@ void IMU::ComputeAndWriteDataForInitialisationPeriod(std::string filename)
 	{
 		// Compute the Allan Variance for both accel and gyro
 		Eigen::Vector3f accelAllanVariance, gyroAllanVariance;
-		ComputeAllanVariance(i, numSamplesInInterval, samples, accelAllanVariance, gyroAllanVariance);
+		ComputeAllanVariance(i, numSamplesInInterval, accelAllanVariance, gyroAllanVariance);
 
 		accelAllanVariances.push_back(accelAllanVariance);
 		gyroAllanVariances.push_back(gyroAllanVariance);
@@ -94,7 +94,7 @@ void IMU::ComputeAndWriteDataForInitialisationPeriod(std::string filename)
 *	Calibrate the IMU
 * 
 */
-bool IMU::Calibrate(const int initTime, const int freq)
+bool IMU::Calibrate(const int initTime, const int freq, const float staticIntervalTime)
 {
 	// sanity checks
 	if (samples.size() < freq * initTime)
@@ -102,38 +102,55 @@ bool IMU::Calibrate(const int initTime, const int freq)
 		return false;
 	}
 
-	//std::vector<Vector3f> accelSamples
 
+	// ------------------------------------------------------------------------
+	// Compute thresholds for static detector
 	// Go over initTime samples and compute the Allan variance
 	// This gives a threshold for stationary moments, used below.
 	// We also use this initial period to compute the gyro biases.
 	// The sample time for averages in this computation is defined
-	// as ALLAN_AVERAGE_INTERVAL_SECONDS in CalibrationHelpers.h
-	Eigen::Vector3f allanVariance;
-	// TODO specify which device? Do for accel, and then also for gyro
+	// as ALLAN_AVERAGE_INTERVAL_SECONDS above
+	Eigen::Vector3f allanVarianceAccel, allanVarianceGyro;
 	int numIntervals = initTime / ALLAN_AVERAGE_INTERVAL_SECONDS;
 	int numSamplesInInterval = freq * ALLAN_AVERAGE_INTERVAL_SECONDS;
-	//ComputeAllanVariance(numIntervals, numSamplesInInterval, allanVariance);
-	float staticThreshold = STATIC_THRESHOLD_MULTIPLIER * allanVariance.norm() * allanVariance.norm();
+	ComputeAllanVariance(numIntervals, numSamplesInInterval, allanVarianceAccel, allanVarianceGyro);
+	float staticThresholdAccel = STATIC_THRESHOLD_MULTIPLIER * allanVarianceAccel.norm() * allanVarianceAccel.norm();
+	std::cout << "Static motion threshold for acceleration data is " << staticThresholdAccel << std::endl;
 
+	// ------------------------------------------------------------------------
+	// Detect static sections and moving sections
+	// These will be stored as pairs of indices into the data array that are the first
+	// and last indices of the valid static section. Anything between two valid static sections
+	// is a valid moving section.
+	// A static section is considered valid if, for the given static interval from the config args,
+	// the variance of the accel data is below the staticThresholdAccel computed above.
+	// At least 9 static intervals are required for a minimal calibration
+	std::vector<std::pair<int, int>> staticIntervals;
+	ComputeStaticIntervals(staticThresholdAccel, staticIntervals);
+	std::cout << "Found " << staticIntervals.size() << " static intervals of length " << staticIntervalTime << " in the data" << std::endl;
+	if (staticIntervals.size() < 9)
+	{
+		std::cout << "Fewer than 9 static intervals found! Not enough to properly calibrate. Aborting." << std::endl;
+		return false;
+	}
 
-	// Why is allan varaince for gyro computed?
-	// don't we need this for accel? TO compare to accel?
-
-	// Use Allan variance  + graph this to find a good T_init
-	// make a function that does this
-
-
-
+	// ------------------------------------------------------------------------
+	// Compute gyro biases
 	// average over each axis in this time to compute the biases
 	int numInitSamples = freq * initTime;
-	for (int i = 0; i < numInitSamples; ++i)
+	bias = samples[0].gyro;
+	for (int i = 1; i <= numInitSamples; ++i)
 	{
-		// TODO: watch for numerical growth here, this could get large?
-		// ort lose precision
+		bias *= i;
+
 		bias += samples[i].gyro;
+
+		// To avoid numerical growth and losing precision,
+		// we employ a rolling average. Multiply by prior denominator,
+		// and divide by current sample size to maintain an accurate average. 
+		// eg. (x+y)/2 is the avg of 2. To get avg of 3, (x+y)/2 * 2 + z all divided by 3, gives (x+y+z)/3
+		bias /= (float)(i + 1);
 	}
-	bias /= numInitSamples;
 
 
 
@@ -236,7 +253,6 @@ bool IMU::ReadLogFromFile(std::string filename)
 void IMU::ComputeAllanVariance(
 	const int numIntervals,
 	const int numSamplesInInterval,
-	std::vector<IMUSample>& inputSamples,
 	Eigen::Vector3f& allanVarianceAccel,
 	Eigen::Vector3f& allanVarianceGyro)
 {
@@ -254,7 +270,7 @@ void IMU::ComputeAllanVariance(
 	// compute first prior average
 	for (; index < numSamplesInInterval; ++index)
 	{
-		priorAvg += inputSamples[index].accel;
+		priorAvg += samples[index].accel;
 	}
 	priorAvg /= numSamplesInInterval;
 
@@ -264,7 +280,7 @@ void IMU::ComputeAllanVariance(
 		currentAvg.setZero();
 		for (; index < i*numSamplesInInterval; ++index)
 		{
-			currentAvg += inputSamples[index].accel;
+			currentAvg += samples[index].accel;
 		}
 		currentAvg /= numSamplesInInterval;
 
@@ -289,7 +305,7 @@ void IMU::ComputeAllanVariance(
 	// compute first prior average
 	for (; index < numSamplesInInterval; ++index)
 	{
-		priorAvg += inputSamples[index].gyro;
+		priorAvg += samples[index].gyro;
 	}
 	priorAvg /= numSamplesInInterval;
 
@@ -299,7 +315,7 @@ void IMU::ComputeAllanVariance(
 		currentAvg.setZero();
 		for (; index < i * numSamplesInInterval; ++index)
 		{
-			currentAvg += inputSamples[index].gyro;
+			currentAvg += samples[index].gyro;
 		}
 		currentAvg /= numSamplesInInterval;
 
@@ -313,4 +329,17 @@ void IMU::ComputeAllanVariance(
 	}
 
 	allanVarianceGyro /= 2 * numIntervals;
+}
+
+/*
+ * Compute intervals of static motion amongst the given data
+ * These intervals are assumed to be at least as long as the given time in the config,
+ * and cannot overlap.
+ * An interval is considered valid if the magnitude of the variance for the period is below the given threshold.
+ * Two consective intervals must have at least half the transition time provided in the config between them.
+ * Intervals are denoted by start and end indices for the data array
+ */
+void IMU::ComputeStaticIntervals(const float threshold, std::vector<std::pair<int, int>>& staticIntervals)
+{
+
 }

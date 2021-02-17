@@ -24,7 +24,7 @@ public:
 
 	void ComputeAndWriteDataForInitialisationPeriod(std::string filename);
 
-	bool Calibrate(const int initTime, const int freq);
+	bool Calibrate(const int initTime, const int freq, const float staticIntervalTime);
 	bool WriteCalibrationToFile(std::string filename);
 
 	void WriteLogToFile(std::string filename);
@@ -48,9 +48,12 @@ private:
 	void ComputeAllanVariance(
 		const int numIntervals,
 		const int numSamplesInInterval,
-		std::vector<IMUSample>& inputSamples,
 		Eigen::Vector3f& allanVarianceAccel,
 		Eigen::Vector3f& allanVarianceGyro);
+
+	void ComputeStaticIntervals(
+		const float threshold,
+		std::vector<std::pair<int, int>>& staticIntervals);
 
 	// parameters to estimate
 	double rot_yz;

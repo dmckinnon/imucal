@@ -104,7 +104,11 @@ int main(int argc, char* argv[])
 			return -1;
 		}
 
-		imu.Calibrate(config.initTime, config.captureFrequency);
+		if (!imu.Calibrate(config.initTime, config.captureFrequency, config.staticTime))
+		{
+			std::cout << "Failed to calibrate" << std::endl;
+			exit(-1);
+		}
 
 		// Write calibration to file
 		imu.WriteCalibrationToFile("imucal.txt");
