@@ -75,7 +75,14 @@ void IMU::ComputeAndWriteDataForInitialisationPeriod(std::string filename)
 	std::ofstream output(filename);
 	if (output.is_open())
 	{
-
+		output << "numIntervals,accelVar0,accelVar1,accelVar2,gyroVar0,gyroVar1,gyroVar2" << std::endl;
+		for (int i = 0; i < numIntervals; ++i)
+		{
+			Eigen::Vector3f aav = accelAllanVariances[i];
+			Eigen::Vector3f gav = gyroAllanVariances[i];
+			output << i << "," << aav[0] << "," << aav[1] << "," << aav[2] << "," << gav[0] << "," << gav[1] << "," << gav[2] << std::endl;
+		}
+		std::cout << "Written Allan variances for accel and gyro over a time period of " << initTime << " seconds to " << filename << std::endl;
 	}
 	else
 	{
