@@ -60,9 +60,10 @@ private:
 		const float threshold,
 		const float staticTime,
 		const float transitionTime,
+		const float initTime,
 		std::vector<std::pair<int, int>>& staticIntervals);
 
-	bool IsIntervalStatic(const int start, const int end);
+	bool IsIntervalStatic(const int start, const int end, const float threshold);
 
 	// parameters to estimate
 	double rot_yz;

@@ -215,7 +215,7 @@ bool IMU::Calibrate(
 	// the variance of the accel data is below the staticThresholdAccel computed above.
 	// At least 9 static intervals are required for a minimal calibration
 	std::vector<std::pair<int, int>> staticIntervals;
-	ComputeStaticIntervals(staticThresholdAccel, staticIntervalTime, transitionTime, staticIntervals);
+	ComputeStaticIntervals(staticThresholdAccel, staticIntervalTime, transitionTime, initTime, staticIntervals);
 	std::cout << "Found " << staticIntervals.size() << " static intervals of length " << staticIntervalTime << " in the data" << std::endl;
 	if (staticIntervals.size() < 9)
 	{
@@ -428,6 +428,7 @@ void IMU::ComputeStaticIntervals(
 	const float threshold,
 	const float staticTime,
 	const float transitionTime,
+	const float initTime,
 	std::vector<std::pair<int, int>>& staticIntervals)
 {
 	// For each section of certain length, find the variance
@@ -436,13 +437,53 @@ void IMU::ComputeStaticIntervals(
 	// otherwise, start a new section with the next sample
 
 	float freq = 1 / (float)(samples[1].timestamp - samples[0].timestamp);
+	int numSamplesPerInterval = staticTime * freq;
+	int numSamplesPerTransition = transitionTime * freq;
+	int startingIndex = initTime * freq;
 
-	// Check that interval is long enough
-	IsIntervalStatic(0, 1, threshold);
+	// Loop over all possible intervals, starting at the end of the expected initialisation time
+	for (int i = startingIndex; i < samples.size() - numSamplesPerInterval; ++i)
+	{
+		// Strictly enforce interval length here. We could do something more dynamic where it expands an interval
+		// until the threshold fails, and then take everything before that, and enforce a minimum size.
+		// This is just a simple first pass
+		if (IsIntervalStatic(i, i + numSamplesPerInterval, threshold))
+		{
+			// Once an interval has been found, save it and move the counter
+			// at least numSamplesPerTransition indices after the end
+			// This enforces that no two static intervals can overlap
+			staticIntervals.push_back(std::pair<int, int>(i, i+numSamplesPerInterval));
+			i += numSamplesPerInterval + numSamplesPerTransition - 1; // account for for loop increment
+		}
+	}
+
+	std::cout << "Found " << staticIntervals.size() << " static intervals in the data." << std::endl;
 }
 
 /*
  * Helper for computing static intervals. On a given interval, compute
  * the magnitude of the variance across all three dimensions for acceleration.
- * If variance magnitude is less than the threshold
+ * If variance magnitude is less than the threshold, not a static interval
  */
+bool IMU::IsIntervalStatic(const int start, const int end, const float threshold)
+{
+	// Compute variance for acceleration over each dimension
+	Eigen::Vector3f accelVar, accelAvg;
+	accelAvg.setZero();
+
+	for (int i = start; i <= end; ++i)
+	{
+		accelAvg += samples[i].accel;
+	}
+	accelAvg /= start - end;
+
+	for (int i = start; i <= end; ++i)
+	{
+		auto vec = samples[i].accel - accelAvg;
+		accelVar += vec.cwiseProduct(vec);
+	}
+	accelVar /= start - end;
+
+	float magnitude = accelVar.norm();
+	return magnitude < threshold;
+}
