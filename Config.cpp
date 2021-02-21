@@ -21,6 +21,17 @@ bool Config::ParseArgs(int argc, char* argv[])
 				std::cout << "No output file specified!" << std::endl;
 			}
 		}
+		else if (argv[i] == "-port")
+		{
+			if (i + 1 < argc)
+			{
+				comPort = argv[++i];
+			}
+			else
+			{
+				std::cout << "No port specified!" << std::endl;
+			}
+		}
 		else if (argv[i] == "-input")
 		{
 			if (i + 1 < argc)
@@ -99,8 +110,9 @@ bool Config::ParseArgs(int argc, char* argv[])
 			std::cout << "IMUCal.exe [optional args]" << std::endl;
 			std::cout << "Args are:   " << std::endl
 				      << "-log                  : if specified, will log imu data from connected IMU. Off by default" << std::endl
+				      << "-port                 : use the specified COM port to connect to the IMU. Default is COM1" << std::endl
 					  << "-logOut               : file to save logged IMU data to. Saves in csv format" << std::endl
-					  << "-input                : if specified, will use IMU data from this input file. Logged data has priority over this" << std::endl
+					  << "-input                : if specified, will use IMU data from given input file. Logged data has priority over this" << std::endl
 				      << "-nocal                : if specified, calibration won't happen. By default program calibrates" << std::endl
 					  << "-init                 : Time in seconds to take to initialise calibration period. Default 60 seconds" << std::endl
 				      << "-freq                 : Frequency of IMU samples. Default 100Hz" << std::endl

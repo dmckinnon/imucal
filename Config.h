@@ -19,6 +19,7 @@ public:
 		outputFile = "";
 		inputFile = "";
 		varianceFile = "";
+		comPort = "COM1";
 	}
 
 	bool ParseArgs(int argc, char* argv[]);
@@ -33,4 +34,5 @@ public:
 	std::string inputFile;
 	std::string outputFile;
 	std::string varianceFile;
+	std::string comPort;
 };

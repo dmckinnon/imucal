@@ -116,7 +116,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\Users\damckinn\source\eigen\Eigen\src;C:\Users\damckinn\source\eigen;C:\Users\damckinn\source\eigen\Eigen\src\Jacobi;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\damckinn\source\repos\SerialPort\include;C:\Users\damckinn\source\eigen\Eigen\src;C:\Users\damckinn\source\eigen;C:\Users\damckinn\source\eigen\Eigen\src\Jacobi;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -140,6 +140,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\SerialPort\src\SerialPort.cpp" />
     <ClCompile Include="Config.cpp" />
     <ClCompile Include="IMU.cpp" />
     <ClCompile Include="main.cpp" />

@@ -2,11 +2,20 @@
 #include <fstream>
 #include <string>
 #include <vector>
+#include <ctime>
+#include <chrono>
 #include "IMU.h"
+#include "..\SerialPort\include\SerialPort.hpp"
+
+using namespace std::chrono;
 
 // Tunable parameters
 #define ALLAN_AVERAGE_INTERVAL_SECONDS 1
 #define STATIC_THRESHOLD_MULTIPLIER 6
+
+// Non-tunable params
+#define MAX_SERIAL_DATA_LENGTH 255
+#define ARDUINO_PACKET_LENGTH 24
 
 IMU::IMU() :
 	rot_yz(0),
@@ -18,6 +27,11 @@ IMU::IMU() :
 
 	scale.setZero();
 	bias.setZero();
+}
+
+IMU::~IMU()
+{
+
 }
 
 bool IMU::HasData()
@@ -91,9 +105,80 @@ void IMU::ComputeAndWriteDataForInitialisationPeriod(std::string filename)
 }
 
 /*
-*	Calibrate the IMU
-* 
-*/
+ * Connect to the Arduino via COM ports, and read the IMU data from the byte stream.
+ * 
+ * Note that since I am writing this on windows, there is some hardcoding for windows COM ports.
+ * All SerialPort code comes from https://github.com/manashmandal/SerialPort and all credit to them.
+ */
+bool IMU::ConnectAndLogFromArduino(std::string comPort)
+{
+	std::string portName = "\\\\.\\" + comPort;
+	SerialPort* arduino= new SerialPort(portName.c_str());
+
+	while (true) {
+		std::cout << "Searching in progress";
+		// wait connection
+		while (!arduino->isConnected())
+		{
+			Sleep(100);
+			std::cout << ".";
+			arduino = new SerialPort(portName.c_str());
+		}
+
+		// Checking if arduino is connected or not
+		if (arduino->isConnected())
+		{
+			std::cout << std::endl << "Connection established at port " << portName << std::endl;
+			std::cout << "Press 'C' to stop reading." << std::endl;
+		}
+		else
+		{
+			std::cout << "Cannot connect to port " << portName << std::endl;
+			break;
+		}
+
+		// Read in data until arduino is disconnected or a key is pressed
+		while (arduino->isConnected())
+		{
+			char bytestream[MAX_SERIAL_DATA_LENGTH];
+			if (arduino->readSerialPort(bytestream, ARDUINO_PACKET_LENGTH))
+			{
+				// Read the data from the bytestream. There are 24 bytes, in the format
+				// of accel xyz, gyro xyz, so six floats. We convert the string to a float array
+				float* input = (float*)bytestream;
+				IMUSample sample;
+				sample.accel << input[0], input[1], input[2];
+				sample.gyro << input[3], input[4], input[5];
+				milliseconds ms = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
+				sample.timestamp = ms.count();
+
+				samples.push_back(sample);
+			}
+			else
+			{
+				std::cerr << "Error occurred reading data" << std::endl;
+			}
+
+			// check for keypress and close port
+			// This is windows-hardcoded, sorry
+			if (GetKeyState('C') & 0x8000/*Check if high-order bit is set (1 << 15)*/)
+			{
+				std::cout << "Closing serial port" << std::endl;
+				arduino->closeSerial();
+				return true;
+			}
+			
+		}
+	}
+
+	return false;
+}
+
+/*
+ *	Calibrate the IMU
+ * 
+ *   Theory goes here
+ */
 bool IMU::Calibrate(
 	const int initTime,
 	const int freq,
@@ -348,4 +433,16 @@ void IMU::ComputeStaticIntervals(
 	// For each section of certain length, find the variance
 	// if below, flag it, and move straight to the end fo the section
 	// otherwise, start a new section with the next sample
+	// otherwise, start a new section with the next sample
+
+	float freq = 1 / (float)(samples[1].timestamp - samples[0].timestamp);
+
+	// Check that interval is long enough
+	IsIntervalStatic(0, 1, threshold);
 }
+
+/*
+ * Helper for computing static intervals. On a given interval, compute
+ * the magnitude of the variance across all three dimensions for acceleration.
+ * If variance magnitude is less than the threshold
+ */

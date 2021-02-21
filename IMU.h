@@ -24,6 +24,8 @@ public:
 
 	void ComputeAndWriteDataForInitialisationPeriod(std::string filename);
 
+	bool ConnectAndLogFromArduino(std::string comPort);
+
 	bool Calibrate(
 		const int initTime,
 		const int freq,
@@ -33,7 +35,6 @@ public:
 
 	void WriteLogToFile(std::string filename);
 	bool ReadLogFromFile(std::string filename);
-
 
 private:
 
@@ -60,6 +61,8 @@ private:
 		const float staticTime,
 		const float transitionTime,
 		std::vector<std::pair<int, int>>& staticIntervals);
+
+	bool IsIntervalStatic(const int start, const int end);
 
 	// parameters to estimate
 	double rot_yz;

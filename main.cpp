@@ -54,9 +54,10 @@ int main(int argc, char* argv[])
 	if (config.logIMUData)
 	{
 		cout << "Logging data. This will guide you through the data capture procedure. " << endl;
-		//imu.log
-		// This requires the serial stuff
-		// Have configurable static times, and display those times and when to switch
+		if (!imu.ConnectAndLogFromArduino(config.comPort))
+		{	
+			cout << "Could not read data from com port. " << endl;
+		}
 
 		if (!config.outputFile.empty())
 		{
