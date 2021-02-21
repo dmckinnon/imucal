@@ -5,6 +5,7 @@ This article and repo describes how to calibrate an Inertial Measurement Unit (I
 - Overview
 - Calibration Process
 - Background theory
+- Logging Data from IMU
 - Finding device variance
 - Detecting stationary moments
 - Calibrating Accelerometer
@@ -50,6 +51,9 @@ The initialisation period allows us to find the inherent noise or inherent error
 I'm going to go over the importance and use of the static periods and the transition periods, and how we estimate the parameters, but first lets go over the theory behind all of this so we know why we have arrived at this algorithm. 
 
 ## Background theory
+
+## Logging Data from IMU
+As stated above, I'm using a MPU6050 IMU from [Adafruit](https://www.adafruit.com/product/3886) and I have it connected to an Arduino, which then connects to this program. I'm using [Manash's ++ SerialPort library](https://github.com/manashmandal/SerialPort) to connect to the Arduino and read from the Serial Port. The [Arduino program](https://github.com/dmckinnon/imucal/blob/master/datastream/datastream.ino) is simple; it just reads from the IMU at the specified rate, and then sends these data minimally through the serial port. You can use any arduino for this as long as the baud rate works and the arduino has I2C (which I'm pretty sure is all of them). Also, I added some args so you can just log the data to a csv, and then load in a csv of (timestamp, accel vector, gyro vector) as input instead of live from the arduino. 
 
 ## Finding Device Variance
 
