@@ -241,10 +241,18 @@ bool IMU::Calibrate(
 		bias /= (float)(i + 1);
 	}
 
+	// for gyro we need an operator that takes n gyro readings, a unit vector for grav direciton
+	// and the samples between the k-1th static interval and the kth
+	//this can be any integration algorithm that computes final orientation from angular vels
+	// baSICALLY we need to intergrate angular vel correctly
 
-	// Sliding window of 1 second of samples to compute variance across that window. 
-	// When variance is below the 'stationary' threshold, set time at start of window to be 'start of stationary'
-	// and as soon things are above threshold, the time at the end of the prior window is the end of stationary
+	// This paper uses Runge-Kutta integration
+	// it would be a good exercise to prove its accuracy for a signal
+	// vs. just averaging the derivative signal
+
+
+
+	// Implement the bundle adjustment here
 
 	return true;
 }
@@ -456,8 +464,6 @@ void IMU::ComputeStaticIntervals(
 			i += numSamplesPerInterval + numSamplesPerTransition - 1; // account for for loop increment
 		}
 	}
-
-	std::cout << "Found " << staticIntervals.size() << " static intervals in the data." << std::endl;
 }
 
 /*

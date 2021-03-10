@@ -142,12 +142,14 @@
   <ItemGroup>
     <ClCompile Include="..\SerialPort\src\SerialPort.cpp" />
     <ClCompile Include="Config.cpp" />
+    <ClCompile Include="Estimation.cpp" />
     <ClCompile Include="IMU.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CalibrationHelpers.h" />
     <ClInclude Include="Config.h" />
+    <ClInclude Include="Estimation.h" />
     <ClInclude Include="IMU.h" />
     <ClInclude Include="Vector.h" />
   </ItemGroup>
