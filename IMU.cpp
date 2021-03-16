@@ -5,6 +5,7 @@
 #include <ctime>
 #include <chrono>
 #include "IMU.h"
+#include "Estimation.h"
 #include "..\SerialPort\include\SerialPort.hpp"
 
 using namespace std::chrono;
@@ -12,6 +13,9 @@ using namespace std::chrono;
 // Tunable parameters
 #define ALLAN_AVERAGE_INTERVAL_SECONDS 1
 #define STATIC_THRESHOLD_MULTIPLIER 6
+
+// Look this up for your location at https://www.sensorsone.com/local-gravity-calculator/
+#define LOCAL_GRAVITY_MAGNITUDE 9.80849
 
 // Non-tunable params
 #define MAX_SERIAL_DATA_LENGTH 255
@@ -25,6 +29,7 @@ IMU::IMU() :
 	std::vector<double> scaleInit(3, 1.0);
 	std::vector<double> biasInit(3, 0.0);
 
+	pose.setZero();
 	scale.setZero();
 	bias.setZero();
 }
@@ -222,6 +227,33 @@ bool IMU::Calibrate(
 		std::cout << "Fewer than 9 static intervals found! Not enough to properly calibrate. Aborting." << std::endl;
 		return false;
 	}
+	// Average each static interval into a single vector, which is the acceleration measured per interval
+	std::vector<Eigen::Vector3f> accelInIntervals;
+	for (int i = 0; i < staticIntervals.size(); ++i)
+	{
+		auto interval = staticIntervals[i];
+		// Compute average vector
+		Eigen::Vector3f avgAccel;
+		avgAccel.setZero();
+		for (int j = interval.first; j < interval.second; ++j)
+		{
+			avgAccel += samples[j].accel;
+		}
+		avgAccel /= interval.second - interval.first;
+		accelInIntervals.push_back(avgAccel);
+	}
+
+	// ------------------------------------------------------------------------
+	// Estimate the parameters for acceleration
+	// These are:
+	// 3 translational parameters for the pose of accelerometer in body frame
+	// 3 scale parameters
+	// 3 bias parameters
+	if (!EstimateAccelerometerParams(accelInIntervals, LOCAL_GRAVITY_MAGNITUDE, pose, scale, bias))
+	{
+		std::cout << "Could not estimate accel parameters" << std::endl;
+		return false;
+	}
 
 	// ------------------------------------------------------------------------
 	// Compute gyro biases
@@ -263,9 +295,9 @@ bool IMU::WriteCalibrationToFile(std::string filename)
 	if (calFile.is_open())
 	{
 		// Cal file format is:
-		calFile << "rot_yz: " << rot_yz << std::endl;
-		calFile << "rot_yz: " << rot_yz << std::endl;
-		calFile << "rot_yz: " << rot_yz << std::endl;
+		calFile << "rot_yz: " << pose(0) << std::endl;
+		calFile << "rot_zy: " << pose(1) << std::endl;
+		calFile << "rot_zx: " << pose(2) << std::endl;
 		calFile << "scale: " << scale[0] << "," << scale[1] << "," << scale[2] << std::endl;
 		calFile << "bias: " << bias[0] << "," << bias[1] << "," << bias[2] << std::endl;
 

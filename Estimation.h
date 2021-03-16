@@ -10,6 +10,17 @@
  */
 
 /*
+ * Levenberg-Marquardt specifically for accelerometer parameter estimation
+ * This means it has the jacobian hardcoded and the parameters hardcoded
+ */
+bool EstimateAccelerometerParams(
+	const std::vector<Eigen::Vector3f> accelVals,
+	const float g,
+	Eigen::Vector3f& pose,
+	Eigen::Vector3f& scale,
+	Eigen::Vector3f& bias);
+
+/*
  * Runge Kutta Integration
  * and helper methods
  * The algorithm comes from https://en.wikipedia.org/wiki/Runge%E2%80%93Kutta_methods

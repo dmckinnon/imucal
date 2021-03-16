@@ -69,6 +69,7 @@ private:
 	double rot_yz;
 	double rot_zy;
 	double rot_zx;
+	Eigen::Vector3f pose;
 	Eigen::Vector3f scale;
 	Eigen::Vector3f bias;
 };
